@@ -1,0 +1,32 @@
+@echo off
+set INFERENCE_BASE_DIR={{DIR_NAME}}
+setlocal enabledelayedexpansion
+call :setESC
+set COMMAND=%1
+FOR /F "usebackq" %%i IN (`python -m ecsclient.cli.ecsml current`) DO set WORKING_PROJ=%%i
+
+set PROJECT_CONDA=true
+IF not "%COMMAND%" == "test" IF not "%COMMAND%" == "modelregister" set PROJECT_CONDA=false
+IF "%PROJECT_CONDA%"=="true" (
+    call conda activate %WORKING_PROJ%  && call python -m ecsclient.cli.ecsml %COMMAND% %2 || echo "Please run command '%ESC%[32mecsml initialize%ESC%[0m' to create the conda env and install dependencies.\n"
+) ELSE (
+    IF "%COMMAND%" == "initialize" (
+        call %INFERENCE_BASE_DIR%/bin/project_env_setup.bat "%WORKING_PROJ%"
+    ) ELSE IF "%COMMAND%" == "cleanup" (
+        call %INFERENCE_BASE_DIR%/bin/project_env_delete.bat %WORKING_PROJ%
+    ) ELSE (
+        call python -m ecsclient.cli.ecsml %1 %2
+        IF "%COMMAND%" == "switch" (
+            FOR /F "usebackq" %%i IN (`python -m ecsclient.cli.ecsml current`) DO set WORKING_PROJ=%%i
+            call conda activate %WORKING_PROJ% || ( call conda activate base && echo "Please run command '%ESC%[32mecsml initialize%ESC%[0m' to create the conda env and install dependencies.\n" )
+        )
+    )
+)
+exit /B 0
+
+:setESC
+for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
+  set ESC=%%b
+  exit /B 0
+)
+exit /B 0
