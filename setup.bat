@@ -3,7 +3,7 @@
 call conda activate base
 call conda update -n base conda --yes
 call conda install -n base conda-libmamba-solver --yes
-call conda config --set solver libmamba --yes
+call conda config --set solver libmamba
 call conda install python=3.10 ipykernel --yes
 call conda install grpcio=1.43.0 -c conda-forge --yes
 
