@@ -4,11 +4,14 @@ setlocal enabledelayedexpansion
 call :setESC
 set COMMAND=%1
 FOR /F "usebackq" %%i IN (`python -m ecsclient.cli.ecsml current`) DO set WORKING_PROJ=%%i
-
 set PROJECT_CONDA=true
+set CONDA_ENV_READY=true
 IF not "%COMMAND%" == "test" IF not "%COMMAND%" == "modelregister" set PROJECT_CONDA=false
-IF "%PROJECT_CONDA%"=="true" (
-    call conda activate %WORKING_PROJ%  && call python -m ecsclient.cli.ecsml %COMMAND% %2 || echo "Please run command '%ESC%[32mecsml initialize%ESC%[0m' to create the conda env and install dependencies.\n"
+IF "!PROJECT_CONDA!"=="true" (
+    call conda activate %WORKING_PROJ%  || ( set CONDA_ENV_READY=false && echo "Please run command '%ESC%[32mecsml initialize%ESC%[0m' to create the conda env and install dependencies.\n")
+    IF "!CONDA_ENV_READY!"=="true" (
+        call python -m ecsclient.cli.ecsml %COMMAND% %2
+    )
 ) ELSE (
     IF "%COMMAND%" == "initialize" (
         call %INFERENCE_BASE_DIR%/bin/project_env_setup.bat "%WORKING_PROJ%"
